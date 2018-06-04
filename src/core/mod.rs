@@ -5,24 +5,38 @@ use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(test)]
 use std::fs;
+#[cfg(test)]
+use std::ops::Drop;
 
 mod db_serialization;
 
 #[cfg(test)]
 mod tests;
 
-pub struct DB { env: Environment }
+pub struct DB {
+	env: Environment,
+	#[cfg(test)]
+	dir: String,
+}
+
+#[cfg(test)]
+impl Drop for DB {
+	fn drop(&mut self) {
+		let _ = fs::remove_dir_all(&self.dir);
+	}
+}
 
 impl DB {
 	pub fn init(dir: &str, initial_map_size: u64) -> Result<DB> {
-		#[cfg(test)] {
-			fs::remove_dir_all(dir)?;
-		}
 		let env = EnvBuilder::new()
 			.map_size(initial_map_size)
 			.open(dir, 0o640)?;
 
-		Ok(DB { env })
+		Ok(DB {
+			env,
+			#[cfg(test)]
+			dir: dir.to_string(),
+		})
 	}
 
 	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
