@@ -53,6 +53,19 @@ impl DB {
 		})
 	}
 
+	pub fn search_range<V: DeserializeOwned, F: Fn(&V) -> bool + Sized + 'static>(&self, start_key: &[u8], end_key: &[u8], search: F) -> Result<V> {
+		reader(&self.env, |db| {
+			for entry in db.keyrange(&start_key, &end_key)? {
+				let v = db_serialization::deserialize(entry.get_value())?;
+				if (search)(&v) {
+					return Ok(v);
+				}
+			}
+
+			Err("Term not found.".into())
+		})
+	}
+
 	pub fn key_range(&self, start_key: &[u8], end_key: &[u8]) -> Result<Vec<Vec<u8>>> {
 		reader(&self.env, |db| {
 			let mut res = vec![];
