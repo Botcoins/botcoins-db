@@ -25,9 +25,21 @@ impl DB {
 		reader(&self.env, |db| {
 			let mut res = vec![];
 
-			for e in db.keyrange(&start_key, &end_key)? {
-				let (k, v) = (e.get_key(), e.get_value());
+			for entry in db.keyrange(&start_key, &end_key)? {
+				let (k, v) = (entry.get_key(), entry.get_value());
 				res.push((k, db_serialization::deserialize(v)))
+			}
+
+			Ok(res)
+		})
+	}
+
+	pub fn key_range(&self, start_key: &[u8], end_key: &[u8]) -> Result<Vec<Vec<u8>>> {
+		reader(&self.env, |db| {
+			let mut res = vec![];
+
+			for entry in db.keyrange(&start_key, &end_key)? {
+				res.push(entry.get_key())
 			}
 
 			Ok(res)
@@ -48,12 +60,25 @@ impl DB {
 		unimplemented!()
 	}
 
-	pub fn delete<V: Serialize>(&self, key: &[u8]) {
-		unimplemented!()
+	pub fn delete(&self, key: &[u8]) -> Result<()> {
+		Ok(writer(&self.env, |db| {
+			let _ = db.del(&key);
+		})?)
 	}
 
-	pub fn delete_range<V: Serialize>(&self, begin_key: &[u8], end_key: &[u8]) {
-		unimplemented!()
+	pub fn delete_bulk(&self, keys: Vec<&[u8]>) -> Result<()> {
+		Ok(batched_del(&self.env, keys)?)
+	}
+
+	pub fn delete_range(&self, start_key: &[u8], end_key: &[u8]) -> Result<()> {
+		let keys: Vec<Vec<u8>> = self.key_range(start_key, end_key)?;
+
+		let mut key_refs: Vec<&[u8]> = vec![];
+		for key in &keys {
+			key_refs.push(&key[..]);
+		}
+
+		Ok(self.delete_bulk(key_refs)?)
 	}
 }
 
