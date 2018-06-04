@@ -11,8 +11,6 @@ mod tests;
 
 pub struct DB {
 	env: Environment,
-	#[cfg(test)]
-	dir: String,
 }
 
 impl DB {
@@ -21,11 +19,7 @@ impl DB {
 			.map_size(initial_map_size)
 			.open(dir, 0o640)?;
 
-		Ok(DB {
-			env,
-			#[cfg(test)]
-			dir: dir.to_string(),
-		})
+		Ok(DB { env })
 	}
 
 	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
@@ -41,6 +35,18 @@ impl DB {
 			for entry in db.keyrange(&start_key, &end_key)? {
 				let (k, v) = (entry.get_key(), entry.get_value());
 				res.push((k, db_serialization::deserialize(v)?))
+			}
+
+			Ok(res)
+		})
+	}
+
+	pub fn read_range_vars<V: DeserializeOwned>(&self, start_key: &[u8], end_key: &[u8]) -> Result<Vec<V>> {
+		reader(&self.env, |db| {
+			let mut res = vec![];
+
+			for entry in db.keyrange(&start_key, &end_key)? {
+				res.push(db_serialization::deserialize(entry.get_value())?);
 			}
 
 			Ok(res)
