@@ -1,12 +1,11 @@
 use core::*;
-use std::mem;
 
 #[test]
 fn generic_test() {
 	let db = DB::init("test.lmdb", 1024 * 100).unwrap();
 
 	{
-		let res: Vec<(_, Vec<u8>)> = db.read_range(&[0u8; 1], &unsafe { mem::transmute::<u32, [u8; 4]>(0xFFFFFFFF) }).unwrap();
+		let res: Vec<(_, u8)> = db.read_range(&[0u8; 1], &[0xFFu8; 4]).unwrap();
 		assert!(res.is_empty());
 	}
 
@@ -30,7 +29,7 @@ fn generic_test() {
 
 		db.write_bulk(set.clone()).unwrap();
 
-		let mut res: Vec<(_, u16)> = db.read_range_u64(0xAAAA, 0xAAAE).unwrap();
+		let mut res: Vec<(_, u16)> = db.read_range(set[0].0, set[3].0).unwrap();
 
 		res.reverse();
 

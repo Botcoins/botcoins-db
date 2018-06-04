@@ -3,6 +3,8 @@ use lmdb::{DbFlags, EnvBuilder, Environment, ToMdbValue};
 use lmdb::core::MdbResult;
 use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
+#[cfg(test)]
+use std::fs;
 use std::mem;
 
 mod db_serialization;
@@ -14,6 +16,9 @@ pub struct DB { env: Environment }
 
 impl DB {
 	pub fn init(dir: &str, initial_map_size: u64) -> Result<DB> {
+		#[cfg(test)] {
+			fs::remove_dir_all(dir)?;
+		}
 		let env = EnvBuilder::new()
 			.map_size(initial_map_size)
 			.open(dir, 0o640)?;
