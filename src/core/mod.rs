@@ -23,7 +23,7 @@ impl DB {
 
 	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
 		db_serialization::deserialize(reader(&self.env, |db| {
-			db.get(&key)
+			Ok(db.get(&key)?)
 		})?)
 	}
 
@@ -38,7 +38,7 @@ impl DB {
 
 			for entry in db.keyrange(&start_key, &end_key)? {
 				let (k, v) = (entry.get_key(), entry.get_value());
-				res.push((k, db_serialization::deserialize(v)))
+				res.push((k, db_serialization::deserialize(v)?))
 			}
 
 			Ok(res)
@@ -65,23 +65,27 @@ impl DB {
 
 	pub fn write<V: Serialize>(&self, key: &[u8], value: V) -> Result<()> {
 		Ok(writer(&self.env, |db| {
-			let _ = db.set(&key, &db_serialization::serialize(&value));
+			let v = db_serialization::serialize(&value)?;
+			let _ = db.set(&key, &v);
+
+			Ok(())
 		})?)
 	}
 
 	pub fn write_bulk<V: Serialize>(&self, values: Vec<(&[u8], V)>) -> Result<()> {
-		let values: Vec<(&[u8], Vec<u8>)> = values.iter()
-			.map(|(k, v)| {
-				(*k, db_serialization::serialize(v))
-			})
-			.collect();
+		let mut serialized = Vec::with_capacity(values.len());
 
-		Ok(batched_set(&self.env, values)?)
+		for (k, v) in values {
+			let v = db_serialization::serialize(&v)?;
+			serialized.push((k, v));
+		}
+
+		Ok(batched_set(&self.env, serialized)?)
 	}
 
 	pub fn delete(&self, key: &[u8]) -> Result<()> {
 		Ok(writer(&self.env, |db| {
-			let _ = db.del(&key);
+			Ok(db.del(&key)?)
 		})?)
 	}
 
@@ -126,15 +130,15 @@ fn batched_op<F: Fn(&Database, usize) -> MdbResult<()> + Sized>(env: &Environmen
 	Ok(())
 }
 
-fn writer<F: Fn(&Database) + Sized>(env: &Environment, func: F) -> MdbResult<()> {
-	let db_handle = env.get_default_db(DbFlags::empty()).unwrap();
-	let txn = env.new_transaction().unwrap();
-	func(&txn.bind(&db_handle));
-	txn.commit()
+fn writer<F: Fn(&Database) -> Result<()> + Sized>(env: &Environment, func: F) -> Result<()> {
+	let db_handle = env.get_default_db(DbFlags::empty())?;
+	let txn = env.new_transaction()?;
+	func(&txn.bind(&db_handle))?;
+	Ok(txn.commit()?)
 }
 
-fn reader<T, F: Fn(&Database) -> T + Sized>(env: &Environment, func: F) -> T {
-	let db_handle = env.get_default_db(DbFlags::empty()).unwrap();
-	let reader = env.get_reader().unwrap();
+fn reader<T, F: Fn(&Database) -> Result<T> + Sized>(env: &Environment, func: F) -> Result<T> {
+	let db_handle = env.get_default_db(DbFlags::empty())?;
+	let reader = env.get_reader()?;
 	func(&reader.bind(&db_handle))
 }

@@ -1,7 +1,9 @@
+use bincode::Error as BincodeError;
 use lmdb::MdbError;
 use std::error::Error as StdError;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::result::Result as StdResult;
+
 
 macro_rules! error_derive {
 	($name:ident, $($from:ident),*) => (
@@ -46,7 +48,7 @@ macro_rules! error_derive {
 	)
 }
 
-error_derive!(Error, MdbError);
+error_derive!(Error, BincodeError, MdbError);
 
 pub type Result<T> = StdResult<T, Error>;
 

@@ -1,11 +1,11 @@
-extern crate bincode;
-
+use bincode;
+use error::Result;
 use serde::{Deserialize, Serialize};
 
-pub fn serialize<S: Serialize>(obj: &S) -> Vec<u8> {
-	self::bincode::serialize(obj).unwrap()
+pub fn serialize<S: Serialize>(obj: &S) -> Result<Vec<u8>> {
+	Ok(bincode::serialize(obj)?)
 }
 
-pub fn deserialize<'de, R: Deserialize<'de>>(bytes: &'de [u8]) -> R {
-	self::bincode::deserialize(bytes).unwrap()
+pub fn deserialize<'de, R: Deserialize<'de>>(bytes: &'de [u8]) -> Result<R> {
+	Ok(bincode::deserialize(bytes)?)
 }

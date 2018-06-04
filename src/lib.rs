@@ -1,3 +1,4 @@
+extern crate bincode;
 extern crate lmdb_rs as lmdb;
 extern crate serde;
 #[macro_use]
