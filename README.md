@@ -1,3 +1,3 @@
 # botcoins-db
 
-Abstraction over LMDB for serde support.
+Abstraction over LMDB with serde support.
