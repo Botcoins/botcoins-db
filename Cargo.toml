@@ -4,9 +4,13 @@ version = "0.1.0"
 authors = ["ConcurrentMarxistGC <concurrentmarxistgc@users.noreply.github.com>"]
 
 [dependencies]
+lmdb-rs = "0.7.6"
+bincode="*"
+serde="*"
 tokio = { version = "*", optional = true }
+serde_derive= { version = "*", optional = true }
 
 [features]
-io=["tokio"]
+io=["tokio", "serde_derive"]
 client=["io"]
 server=["io"]
