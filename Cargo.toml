@@ -7,10 +7,10 @@ authors = ["ConcurrentMarxistGC <concurrentmarxistgc@users.noreply.github.com>"]
 lmdb-rs = "0.7.6"
 bincode="*"
 serde="*"
+serde_derive="*"
 tokio = { version = "*", optional = true }
-serde_derive= { version = "*", optional = true }
 
 [features]
-io=["tokio", "serde_derive"]
+io=["tokio", ]
 client=["io"]
 server=["io"]

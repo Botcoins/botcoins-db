@@ -1,28 +1,40 @@
+pub use error::*;
 use lmdb::{DbFlags, Environment, ToMdbValue};
 use lmdb::core::MdbResult;
 use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
 use std::mem;
 
-mod serde;
+mod db_serialization;
 
 pub struct DB { env: Environment }
 
 impl DB {
-	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> V {
-		unimplemented!()
+	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
+		db_serialization::deserialize(reader(&self.env, |db| {
+			db.get(&key)
+		})?)
 	}
 
-	pub fn read_u64<V: DeserializeOwned>(&self, key: u64) -> V {
+	pub fn read_u64<V: DeserializeOwned>(&self, key: u64) -> Result<V> {
 		let key: [u8; 8] = unsafe { mem::transmute(key) };
 		self.read(&key)
 	}
 
-	pub fn read_range<V: DeserializeOwned>(&self, start_key: &[u8], end_key: &[u8]) -> V {
-		unimplemented!()
+	pub fn read_range<V: DeserializeOwned>(&self, start_key: &[u8], end_key: &[u8]) -> Result<Vec<(Vec<u8>, V)>> {
+		reader(&self.env, |db| {
+			let mut res = vec![];
+
+			for e in db.keyrange(&start_key, &end_key)? {
+				let (k, v) = (e.get_key(), e.get_value());
+				res.push((k, db_serialization::deserialize(v)))
+			}
+
+			Ok(res)
+		})
 	}
 
-	pub fn read_range_u64<V: DeserializeOwned>(&self, start_key: u64, end_key: u64) -> V {
+	pub fn read_range_u64<V: DeserializeOwned>(&self, start_key: u64, end_key: u64) -> Result<Vec<(Vec<u8>, V)>> {
 		let start_key: [u8; 8] = unsafe { mem::transmute(start_key) };
 		let end_key: [u8; 8] = unsafe { mem::transmute(end_key) };
 		self.read_range(&start_key, &end_key)
@@ -33,6 +45,14 @@ impl DB {
 	}
 
 	pub fn write_bulk<V: Serialize>(&self, values: Vec<(&[u8], V)>, overwrite_on_duplicate: bool) {
+		unimplemented!()
+	}
+
+	pub fn delete<V: Serialize>(&self, key: &[u8]) {
+		unimplemented!()
+	}
+
+	pub fn delete_range<V: Serialize>(&self, begin_key: &[u8], end_key: &[u8]) {
 		unimplemented!()
 	}
 }
