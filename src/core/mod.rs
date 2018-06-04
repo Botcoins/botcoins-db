@@ -1,5 +1,5 @@
 pub use error::*;
-use lmdb::{DbFlags, Environment, ToMdbValue};
+use lmdb::{DbFlags, EnvBuilder, Environment, ToMdbValue};
 use lmdb::core::MdbResult;
 use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
@@ -10,6 +10,15 @@ mod db_serialization;
 pub struct DB { env: Environment }
 
 impl DB {
+	pub fn init(dir: &str, initial_map_size: u64) -> DB {
+		DB {
+			env: EnvBuilder::new()
+				.map_size(initial_map_size)
+				.open(dir, 0o640)
+				.unwrap()
+		}
+	}
+
 	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
 		db_serialization::deserialize(reader(&self.env, |db| {
 			db.get(&key)
