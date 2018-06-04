@@ -53,7 +53,7 @@ impl DB {
 		})
 	}
 
-	pub fn search_range<V: DeserializeOwned, F: Fn(&V) -> bool + Sized + 'static>(&self, start_key: &[u8], end_key: &[u8], search: F) -> Result<V> {
+	pub fn search_range<V: DeserializeOwned, F: Fn(&V) -> bool + Sized>(&self, start_key: &[u8], end_key: &[u8], search: F) -> Result<V> {
 		reader(&self.env, |db| {
 			for entry in db.keyrange(&start_key, &end_key)? {
 				let v = db_serialization::deserialize(entry.get_value())?;
