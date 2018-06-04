@@ -1,3 +1,3 @@
 # botcoins-db
 
-Abstraction over LMDB for easier coding on the actual bot.
+Abstraction over LMDB for serde support.
