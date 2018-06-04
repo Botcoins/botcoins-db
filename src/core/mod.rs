@@ -7,16 +7,18 @@ use std::mem;
 
 mod db_serialization;
 
+#[cfg(test)]
+mod tests;
+
 pub struct DB { env: Environment }
 
 impl DB {
-	pub fn init(dir: &str, initial_map_size: u64) -> DB {
-		DB {
-			env: EnvBuilder::new()
-				.map_size(initial_map_size)
-				.open(dir, 0o640)
-				.unwrap()
-		}
+	pub fn init(dir: &str, initial_map_size: u64) -> Result<DB> {
+		let env = EnvBuilder::new()
+			.map_size(initial_map_size)
+			.open(dir, 0o640)?;
+
+		Ok(DB { env })
 	}
 
 	pub fn read<V: DeserializeOwned>(&self, key: &[u8]) -> Result<V> {
