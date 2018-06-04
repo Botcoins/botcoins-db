@@ -3,10 +3,6 @@ use lmdb::{DbFlags, EnvBuilder, Environment, ToMdbValue};
 use lmdb::core::MdbResult;
 use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
-#[cfg(test)]
-use std::fs;
-#[cfg(test)]
-use std::ops::Drop;
 
 mod db_serialization;
 
@@ -17,13 +13,6 @@ pub struct DB {
 	env: Environment,
 	#[cfg(test)]
 	dir: String,
-}
-
-#[cfg(test)]
-impl Drop for DB {
-	fn drop(&mut self) {
-		let _ = fs::remove_dir_all(&self.dir);
-	}
 }
 
 impl DB {
