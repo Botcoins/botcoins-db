@@ -4,3 +4,9 @@ version = "0.1.0"
 authors = ["ConcurrentMarxistGC <concurrentmarxistgc@users.noreply.github.com>"]
 
 [dependencies]
+tokio = { version = "*", optional = true }
+
+[features]
+io=["tokio"]
+client=["io"]
+server=["io"]
