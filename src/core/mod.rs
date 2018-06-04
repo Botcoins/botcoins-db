@@ -52,12 +52,20 @@ impl DB {
 		self.read_range(&start_key, &end_key)
 	}
 
-	pub fn write<V: Serialize>(&self, key: &[u8], value: V, overwrite_on_duplicate: bool) {
-		unimplemented!()
+	pub fn write<V: Serialize>(&self, key: &[u8], value: V) -> Result<()> {
+		Ok(writer(&self.env, |db| {
+			let _ = db.set(&key, &db_serialization::serialize(&value));
+		})?)
 	}
 
-	pub fn write_bulk<V: Serialize>(&self, values: Vec<(&[u8], V)>, overwrite_on_duplicate: bool) {
-		unimplemented!()
+	pub fn write_bulk<V: Serialize>(&self, values: Vec<(&[u8], V)>) -> Result<()> {
+		let values: Vec<(&[u8], Vec<u8>)> = values.iter()
+			.map(|(k, v)| {
+				(*k, db_serialization::serialize(v))
+			})
+			.collect();
+
+		Ok(batched_set(&self.env, values)?)
 	}
 
 	pub fn delete(&self, key: &[u8]) -> Result<()> {
