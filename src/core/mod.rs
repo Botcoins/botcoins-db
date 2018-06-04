@@ -5,7 +5,6 @@ use lmdb::Database;
 use serde::{de::DeserializeOwned, Serialize};
 #[cfg(test)]
 use std::fs;
-use std::mem;
 
 mod db_serialization;
 
@@ -32,11 +31,6 @@ impl DB {
 		})?)
 	}
 
-	pub fn read_u64<V: DeserializeOwned>(&self, key: u64) -> Result<V> {
-		let key: [u8; 8] = unsafe { mem::transmute(key) };
-		self.read(&key)
-	}
-
 	pub fn read_range<V: DeserializeOwned>(&self, start_key: &[u8], end_key: &[u8]) -> Result<Vec<(Vec<u8>, V)>> {
 		reader(&self.env, |db| {
 			let mut res = vec![];
@@ -60,12 +54,6 @@ impl DB {
 
 			Ok(res)
 		})
-	}
-
-	pub fn read_range_u64<V: DeserializeOwned>(&self, start_key: u64, end_key: u64) -> Result<Vec<(Vec<u8>, V)>> {
-		let start_key: [u8; 8] = unsafe { mem::transmute(start_key) };
-		let end_key: [u8; 8] = unsafe { mem::transmute(end_key) };
-		self.read_range(&start_key, &end_key)
 	}
 
 	pub fn write<V: Serialize>(&self, key: &[u8], value: V) -> Result<()> {
